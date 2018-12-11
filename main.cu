@@ -10,8 +10,7 @@ using namespace std;
 #define MATCH 1
 #define MISMATCH 1
 #define Gopen -3
-#define Gext -3
-
+#define Gext -2
 
 #define M 1000000
 #define N 1000000
