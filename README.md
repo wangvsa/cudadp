@@ -1,2 +1,2 @@
 # cudadp
-Dynamic Programming Frameworks for GPUs
+Dynamic Programming Framework for GPUs
