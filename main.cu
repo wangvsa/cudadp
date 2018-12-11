@@ -4,6 +4,7 @@
 #include <bitset>
 #include <iostream>
 #include "cudadp.h"
+#include "fasta_util.h"
 using namespace std;
 
 // Affine gap model
@@ -13,7 +14,7 @@ using namespace std;
 #define Gext -2
 
 #define M 1000000
-#define N 1000000
+#define N 100000
 #define G (1024*1024*1024)
 
 struct Sequences {
@@ -38,7 +39,7 @@ int compute_j(int level, int problem_size) {
 __inline__ __device__
 void cudadp_user_kernel(int level, int problem_size, int3 *deps, void *data) {
     int tid = blockIdx.x * THREADS + threadIdx.x;
-    if(tid >= problem_size) return;
+    //if(tid >= problem_size) return;
 
     struct Sequences* seq = (struct Sequences*)data;
     char *A = seq->dev_A;
@@ -50,9 +51,11 @@ void cudadp_user_kernel(int level, int problem_size, int3 *deps, void *data) {
     // read dependencies from global memory to shared memory
     __shared__ int3 local_dep1[THREADS+2];
     __shared__ int3 local_dep2[THREADS+2];
-    local_dep1[threadIdx.x+1] = dep1[tid];
-    local_dep2[threadIdx.x+1] = dep2[tid];
-    if(threadIdx.x == THREADS-1 && tid < problem_size-1 ) {
+    if(tid < min(M, N)) {
+        local_dep1[threadIdx.x+1] = dep1[tid];
+        local_dep2[threadIdx.x+1] = dep2[tid];
+    }
+    if(threadIdx.x == THREADS-1 && tid < min(M, N) ) {
         local_dep1[threadIdx.x+2] = dep1[tid+1];
         local_dep2[threadIdx.x+2] = dep2[tid+1];
     }
@@ -69,13 +72,16 @@ void cudadp_user_kernel(int level, int problem_size, int3 *deps, void *data) {
         if(level >= M+N-1) return;
 
         if(threadIdx.x>=THREADS-k) {
+            //printf("level:%d (%d, %d)\n", level, i, j);
 
             if (level <= min(M-1, N-1)) {           // up, depends on tid-1, tid
                 left = local_dep2[threadIdx.x];
-                up  = local_dep2[threadIdx.x+1];
+                //up  = local_dep2[threadIdx.x+1];
+                up = result;
                 diag = local_dep1[threadIdx.x];
             } else {                                // middle and bottom, depends on tid, tid+1
-                left = local_dep2[threadIdx.x+1];
+                //left = local_dep2[threadIdx.x+1];
+                left = result;
                 up  = local_dep2[threadIdx.x+2];
                 diag = local_dep1[threadIdx.x+2];
             }
@@ -85,20 +91,20 @@ void cudadp_user_kernel(int level, int problem_size, int3 *deps, void *data) {
             result.z = max(0, diag.z + (A[i]==Bj?MATCH:MISMATCH));  // H[i,j]
             result.z = max3(result.z, result.x, result.y);          // H[i,j]
 
-            if(k == THREADS/2) {                                    // last level, write into global memory
+            if(k == THREADS/2 || level==M+N-2) {                    // last level, write into global memory
                 deps[tid] = result;
             } else {                                                // intermediate levels, use local memory
                 // swap dependency levels
                 local_dep2[threadIdx.x] = local_dep1[threadIdx.x];
-                local_dep2[THREADS] = local_dep1[THREADS];
-                local_dep2[THREADS+1] = local_dep1[THREADS+1];
+                if(threadIdx.x == 0) {
+                    local_dep2[THREADS] = local_dep1[THREADS];
+                    local_dep2[THREADS+1] = local_dep1[THREADS+1];
+                }
                 local_dep1[threadIdx.x+1] = result;
             }
         }
-
         __syncthreads();
     }
-
 }
 
 
@@ -115,8 +121,10 @@ string random_string(int length) {
 
 
 int main(int argc, char *argv[]) {
+    //string A = read_fasta_file(argv[1]);
+    //string B = read_fasta_file(argv[1]);
     //string A = "GTCTTACATCCGTTCG";
-    //string B = "TAGCTTAAGATCTTGT";
+    //string B = "GTCTTACATCCGTTCG";
     string A = random_string(M);
     string B = random_string(N);
     //printf("A:%s\nB:%s\n", A.c_str(), B.c_str());
@@ -149,5 +157,6 @@ int main(int argc, char *argv[]) {
     cudaFree(seq.dev_A);
     cudaFree(seq.dev_B);
     cudaFree(dev_seq);
+
     return 0;
 }

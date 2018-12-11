@@ -7,7 +7,7 @@
 #include <iostream>
 using namespace std;
 
-#define THREADS 128
+#define THREADS 256
 #define MAX_DEP 3
 
 #define cudaErrorCheck() {                                          \
@@ -54,6 +54,17 @@ int compute_subproblems(int m, int n, int level) {
     return subproblems;
 }
 
+void check_result(int3 *result, int length) {
+    int3 h_result[length];
+
+    cudaMemcpy(h_result, result, length*sizeof(int3), cudaMemcpyDeviceToHost);
+    for(int i = 0; i < length; i++) {
+        printf("%d %d %d ", h_result[i].x, h_result[i].y, h_result[i].z);
+    }
+    printf("\n");
+}
+
+
 void cudadp_start(int m, int n, int dep_level, void *data) {
     // generate dependencies;
     int max_levels = m + n - 1;
@@ -67,10 +78,11 @@ void cudadp_start(int m, int n, int dep_level, void *data) {
     for(int level = 0; level < max_levels; level+=(THREADS/2+1)) {
         int subproblems = compute_subproblems(m, n, level);
         //cout<<"level:"<<level<<", subproblem size: "<<subproblems<<endl;
-        cudadp_kernel<<<compute_blocks(subproblems, THREADS/2), THREADS/2>>>(level, subproblems, deps, data);
+        cudadp_kernel<<<compute_blocks(subproblems, THREADS/2), THREADS>>>(level, subproblems, deps, data);
         //cudaDeviceSynchronize();
-        cudaErrorCheck();
+        //cudaErrorCheck();
     }
+    //check_result(deps, dep_level*min_mn);
 
     cudaFree(deps);
 }
