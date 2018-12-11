@@ -7,12 +7,6 @@
 #include "fasta_util.h"
 using namespace std;
 
-// Affine gap model
-#define MATCH 1
-#define MISMATCH 1
-#define Gopen -3
-#define Gext -2
-
 #define M 1000000
 #define N 100000
 #define G (1000*1000*1000)
@@ -37,7 +31,7 @@ int compute_j(int level, int problem_size) {
 }
 
 __inline__ __device__
-void cudadp_user_kernel(int level, int problem_size, int3 *deps, void *data) {
+void cudadp_user_kernel(int level, int problem_size, int *deps, void *data) {
     int tid = blockIdx.x * THREADS + threadIdx.x;
     //if(tid >= problem_size) return;
 
@@ -45,12 +39,12 @@ void cudadp_user_kernel(int level, int problem_size, int3 *deps, void *data) {
     char *A = seq->dev_A;
     char *B = seq->dev_B;
     
-    int3 *dep1  = deps;
-    int3 *dep2 = &deps[min(M, N)];
+    int *dep1  = deps;
+    int *dep2 = &deps[min(M, N)];
 
     // read dependencies from global memory to shared memory
-    __shared__ int3 local_dep1[THREADS+2];
-    __shared__ int3 local_dep2[THREADS+2];
+    __shared__ int local_dep1[THREADS+2];
+    __shared__ int local_dep2[THREADS+2];
     if(tid < min(M, N)) {
         local_dep1[threadIdx.x+1] = dep1[tid];
         local_dep2[threadIdx.x+1] = dep2[tid];
@@ -66,7 +60,7 @@ void cudadp_user_kernel(int level, int problem_size, int3 *deps, void *data) {
     i = level - j;
     char Bj = B[j]; // j, B[j] are not changing during following steps
 
-    int3 diag, left, up, result;
+    int diag, left, up, result;
     for(int k = 0; k < THREADS/2+1; k++, i++, level++) {
 
         if(level >= M+N-1) return;
@@ -86,10 +80,7 @@ void cudadp_user_kernel(int level, int problem_size, int3 *deps, void *data) {
                 diag = local_dep1[threadIdx.x+2];
             }
 
-            result.x = max(left.x-Gext, left.z-Gopen);              // E[i,j]
-            result.y = max(up.y-Gext, up.z-Gopen);                  // F[i,j]
-            result.z = max(0, diag.z + (A[i]==Bj?MATCH:MISMATCH));  // H[i,j]
-            result.z = max3(result.z, result.x, result.y);          // H[i,j]
+            result = A[i] == Bj ? diag+1 : max(up, left);
 
             if(k == THREADS/2 || level==M+N-2) {                    // last level, write into global memory
                 deps[tid] = result;
