@@ -28,7 +28,7 @@
         char *B = seq->dev_B;
 
         int result;
-        result = A[i] == B[j] ? 1 : max(left, up);
+        result = A[i] == B[j] ? diag+1 : max(left, up);
         return result;
     }
 
