@@ -1,7 +1,7 @@
 
 
 
-	// Smith-Waterman algorithm with affine gap model
+    // Smith-Waterman algorithm with affine gap model
     // MATCH: 1; MISMATCH: -3; Gopen: -3; Gext: -2
     __inline__ __device__
     int3 cudadp_user_kernel(int i, int j, int level,
