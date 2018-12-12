@@ -4,9 +4,7 @@
     // Smith-Waterman algorithm with affine gap model
     // MATCH: 1; MISMATCH: -3; Gopen: -3; Gext: -2
     __inline__ __device__
-    int3 cudadp_user_kernel(int i, int j, int level,
-    						int3 left, int3 up, int3 diag, void *data) {
-
+    int3 cudadp_user_kernel(int i, int j, int3 left, int3 up, int3 diag, void *data) {
         struct Sequences* seq = (struct Sequences*)data;
         char *A = seq->dev_A;
         char *B = seq->dev_B;
@@ -18,11 +16,12 @@
 
         return result;
     }
+    
+
 
     // Longest common subsequence
     __inline__ __device__
-    int cudadp_user_kernel(int i, in j, int level,
-    					   int left, int up, int diag, void *data) {
+    int cudadp_user_kernel(int i, in j, int left, int up, int diag, void *data) {
         struct Sequences* seq = (struct Sequences*)data;
         char *A = seq->dev_A;
         char *B = seq->dev_B;
