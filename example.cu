@@ -62,7 +62,6 @@
 	    __syncthreads();
 
 	    int3 diag, left, up, result;
-
 	    if (level <= min(M-1, N-1)) {           // up, depends on tid-1, tid
 	        left = local_dep2[threadIdx.x];
 	        up  = local_dep2[threadIdx.x+1];
@@ -73,10 +72,9 @@
 	        diag = local_dep1[threadIdx.x+2];
 	    }
 
-        result.x = max(left.x-Gext, left.z-Gopen);              // E[i,j]
-        result.y = max(up.y-Gext, up.z-Gopen);                  // F[i,j]
-        result.z = max(0, result.x, result.y, diag.z + (A[i]==Bj?MATCH:MISMATCH));  // H[i,j]
-
+            result.x = max(left.x-Gext, left.z-Gopen);              // E[i,j]
+            result.y = max(up.y-Gext, up.z-Gopen);                  // F[i,j]
+            result.z = max(0, result.x, result.y, diag.z + (A[i]==Bj?MATCH:MISMATCH));  // H[i,j]
 	    return result;
 	}
 
