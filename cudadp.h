@@ -25,12 +25,12 @@ using namespace std;
 
 // User need to implement this function
 __inline__ __device__
-void cudadp_user_kernel(int level, int problem_size, int3 *deps, void *data);
+void cudadp_user_kernel(int m, int n, int level, int problem_size, int3 *deps, void *data);
 
 
 __global__
-void cudadp_kernel(int level, int problem_size, int3 *deps, void* data) {
-    cudadp_user_kernel(level, problem_size, deps, data);
+void cudadp_kernel(int m, int n, int level, int problem_size, int3 *deps, void* data) {
+    cudadp_user_kernel(m, n, level, problem_size, deps, data);
 }
 
 __inline__
@@ -78,7 +78,7 @@ void cudadp_start(int m, int n, int dep_level, void *data) {
     for(int level = 0; level < max_levels; level+=(THREADS/2+1)) {
         int subproblems = compute_subproblems(m, n, level);
         //cout<<"level:"<<level<<", subproblem size: "<<subproblems<<endl;
-        cudadp_kernel<<<compute_blocks(subproblems, THREADS/2), THREADS>>>(level, subproblems, deps, data);
+        cudadp_kernel<<<compute_blocks(subproblems, THREADS/2), THREADS>>>(m, n, level, subproblems, deps, data);
         //cudaDeviceSynchronize();
         //cudaErrorCheck();
     }

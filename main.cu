@@ -37,7 +37,7 @@ int compute_j(int level, int problem_size) {
 }
 
 __inline__ __device__
-void cudadp_user_kernel(int level, int problem_size, int3 *deps, void *data) {
+void cudadp_user_kernel(int m, int n, int level, int problem_size, int3 *deps, void *data) {
     int tid = blockIdx.x * THREADS + threadIdx.x;
     //if(tid >= problem_size) return;
 
@@ -46,12 +46,12 @@ void cudadp_user_kernel(int level, int problem_size, int3 *deps, void *data) {
     char *B = seq->dev_B;
     
     int3 *dep1  = deps;
-    int3 *dep2 = &deps[min(M, N)];
+    int3 *dep2 = &deps[min(m, n)];
 
     // read dependencies from global memory to shared memory
     __shared__ int3 local_dep1[THREADS+2];
     __shared__ int3 local_dep2[THREADS+2];
-    if(tid < min(M, N)) {
+    if(tid < min(m, n)) {
         local_dep1[threadIdx.x+1] = dep1[tid];
         local_dep2[threadIdx.x+1] = dep2[tid];
     }
