@@ -1,12 +1,10 @@
 
 
 
-	// Smith-Waterman algorithm with affine gap model
+    // Smith-Waterman algorithm with affine gap model
     // MATCH: 1; MISMATCH: -3; Gopen: -3; Gext: -2
     __inline__ __device__
-    int3 cudadp_user_kernel(int i, int j, int level,
-    						int3 left, int3 up, int3 diag, void *data) {
-
+    int3 cudadp_user_kernel(int i, int j, int3 left, int3 up, int3 diag, void *data) {
         struct Sequences* seq = (struct Sequences*)data;
         char *A = seq->dev_A;
         char *B = seq->dev_B;
@@ -18,17 +16,18 @@
 
         return result;
     }
+    
+
 
     // Longest common subsequence
     __inline__ __device__
-    int cudadp_user_kernel(int i, in j, int level,
-    					   int left, int up, int diag, void *data) {
+    int cudadp_user_kernel(int i, in j, int left, int up, int diag, void *data) {
         struct Sequences* seq = (struct Sequences*)data;
         char *A = seq->dev_A;
         char *B = seq->dev_B;
 
         int result;
-        result = A[i] == B[j] ? 1 : max(left, up);
+        result = A[i] == B[j] ? diag+1 : max(left, up);
         return result;
     }
 
@@ -62,7 +61,6 @@
 	    __syncthreads();
 
 	    int3 diag, left, up, result;
-
 	    if (level <= min(M-1, N-1)) {           // up, depends on tid-1, tid
 	        left = local_dep2[threadIdx.x];
 	        up  = local_dep2[threadIdx.x+1];
@@ -73,10 +71,9 @@
 	        diag = local_dep1[threadIdx.x+2];
 	    }
 
-        result.x = max(left.x-Gext, left.z-Gopen);              // E[i,j]
-        result.y = max(up.y-Gext, up.z-Gopen);                  // F[i,j]
-        result.z = max(0, result.x, result.y, diag.z + (A[i]==Bj?MATCH:MISMATCH));  // H[i,j]
-
+            result.x = max(left.x-Gext, left.z-Gopen);              // E[i,j]
+            result.y = max(up.y-Gext, up.z-Gopen);                  // F[i,j]
+            result.z = max(0, result.x, result.y, diag.z + (A[i]==Bj?MATCH:MISMATCH));  // H[i,j]
 	    return result;
 	}
 
