@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
-#include <bitset>
 #include <iostream>
 using namespace std;
 
@@ -33,6 +32,7 @@ void cudadp_kernel(int m, int n, int level, int problem_size, int3 *deps, void* 
     cudadp_user_kernel(m, n, level, problem_size, deps, data);
 }
 
+// TODO Use ceil in math.h
 __inline__
 int compute_blocks(int subproblems, int threads) {
     int blocks = subproblems / threads;
@@ -40,19 +40,6 @@ int compute_blocks(int subproblems, int threads) {
     return blocks;
 }
 
-__inline__
-int compute_subproblems(int m, int n, int level) {
-    int subproblems;
-    int total_levels = m + n - 1;
-    if(level < min(m, n) ) {
-        subproblems = level + 1;
-    } else if( (total_levels-level) < min(m, n)) {
-        subproblems = total_levels - level;
-    } else {
-        subproblems = min(m, n);
-    }
-    return subproblems;
-}
 
 void check_result(int3 *result, int length) {
     int3 h_result[length];

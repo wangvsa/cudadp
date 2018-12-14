@@ -13,7 +13,7 @@ using namespace std;
 #define Gopen -3
 #define Gext -2
 
-#define M 1000000
+#define M 100000
 #define N 100000
 #define G (1000*1000*1000)
 
