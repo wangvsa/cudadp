@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
+#include "dp_diag_up_left.h"
 using namespace std;
 
 #define THREADS 256
@@ -24,15 +25,21 @@ using namespace std;
 
 // User need to implement this function
 __inline__ __device__
-void cudadp_user_kernel(int m, int n, int level, int problem_size, int3 *deps, void *data);
+int3 cudadp_user_kernel(int i, int j, int3 left, int3 up, int3 diag, void *data);
 
 
 __global__
-void cudadp_kernel(int m, int n, int level, int problem_size, int3 *deps, void* data) {
-    cudadp_user_kernel(m, n, level, problem_size, deps, data);
+void cudadp_kernel(DP *dp, int stage, int3 *deps, void* data) {
+    int2 coordinates = dp->get_coordinates(threadIdx.x+blockIdx.x*THREADS, stage);
+    int i = coordinates.x;
+    int j = coordinates.y;
+    int3 left = deps[0];
+    int3 up = deps[1];
+    int3 diag = deps[2];
+    cudadp_user_kernel(i, j, left, up, diag, data);
 }
 
-// TODO Use ceil in math.h
+// TODO Replace with ceil function in math.h
 __inline__
 int compute_blocks(int subproblems, int threads) {
     int blocks = subproblems / threads;
@@ -52,20 +59,20 @@ void check_result(int3 *result, int length) {
 }
 
 
-void cudadp_start(int m, int n, int dep_level, void *data) {
-    // generate dependencies;
-    int max_levels = m + n - 1;
-    cout<<"total levels:"<<max_levels<<endl;
+void cudadp_start(DP *dp, void* data) {
+
+    int dep_level = 2;
+    printf("m: %d, n: %d, stages: %d\n", dp->m, dp->n, dp->total_stages);
 
     int3 *deps;
-    int min_mn = min(m, n);
+    int min_mn = min(dp->m, dp->n);
     int blocks = compute_blocks(min_mn, THREADS/2);
     cudaMalloc(&deps, dep_level*min_mn*sizeof(int3));
 
-    for(int level = 0; level < max_levels; level+=(THREADS/2+1)) {
-        int subproblems = compute_subproblems(m, n, level);
+    for(int level = 0; level < dp->total_stages; level+=(THREADS/2+1)) {
+        int subproblems = dp->get_problem_size(level);
         //cout<<"level:"<<level<<", subproblem size: "<<subproblems<<endl;
-        cudadp_kernel<<<compute_blocks(subproblems, THREADS/2), THREADS>>>(m, n, level, subproblems, deps, data);
+        cudadp_kernel<<<compute_blocks(subproblems, THREADS/2), THREADS>>>(dp, level, deps, data);
         //cudaDeviceSynchronize();
         //cudaErrorCheck();
     }

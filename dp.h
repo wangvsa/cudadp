@@ -1,22 +1,37 @@
 #ifndef _DP_H_
 
+
 /*
  * Abstract Class
- *
+ * virtual functions need to implemented in children classes
  */
 class DP {
-    int m;      // rows
-    int n;      // columns
+public:
+    int m;                  // rows
+    int n;                  // columns
+    int total_stages;       // total number of stages
+
+    DP() { }
+
     DP(int m_, int n_) {
         m = m_;
         n = n_;
+        total_stages = 0;
     }
 
-    virtual int2 get_coordinates(int tid, int level) = 0;
+    // subclass needs to override this function
+    __inline__ __device__
+    int2 get_coordinates(int tid, int level) {
+        int2 coordinates;
+        return coordinates;
+    }
 
-    virtual int get_problem_size(int level) = 0;
+    // subclass needs to override this function
+    __inline__ __device__ __host__
+    int get_problem_size(int stage) {
+        return 0;
+    }
 };
-
 
 
 #endif
