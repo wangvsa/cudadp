@@ -22,7 +22,7 @@ public:
     // subclass needs to override this function
     __inline__ __device__
     int2 get_coordinates(int tid, int level) {
-        int2 coordinates;
+        int2 coordinates = {0, 0};
         return coordinates;
     }
 

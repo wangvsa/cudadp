@@ -32,7 +32,7 @@ public:
         return coordinates;
     }
 
-    __inline__ __device__
+    __inline__ __device__ __host__
     int get_problem_size(int stage) {
         int subproblems;
         if(stage < min(m, n) ) {

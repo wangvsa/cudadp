@@ -7,14 +7,15 @@
 #include "fasta_util.h"
 using namespace std;
 
+#define M 100000
+#define N 100000
+
 // Affine gap model
 #define MATCH 1
 #define MISMATCH 1
 #define Gopen -3
 #define Gext -2
 
-#define M 100000
-#define N 100000
 #define G (1000*1000*1000)
 
 struct Sequences {
@@ -77,7 +78,7 @@ int main(int argc, char *argv[]) {
     cudaEventRecord(start);
 
 
-    DP_DiagUpLeft sw(40, 30);
+    DP_DiagUpLeft sw(M, N);
     cudadp_start(&sw, dev_seq);
 
     cudaEventRecord(stop);
