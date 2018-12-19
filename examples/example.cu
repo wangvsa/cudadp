@@ -1,3 +1,4 @@
+
 // Smith-Waterman algorithm with affine gap model
 // MATCH: 1; MISMATCH: -3; Gopen: -3; Gext: -2
 __inline__ __device__
